@@ -1,6 +1,5 @@
 defmodule AdventOfCode01Test do
   use ExUnit.Case
-  doctest AdventOfCode01
 
   test "Following R2 from start position leaves you facing east two blocks east" do
     assert move(0, {0, 0}, "R2") == [1, {2, 0}, [{2, 0}, {1, 0}, {0, 0}]]
@@ -80,7 +79,7 @@ defmodule AdventOfCode01Test do
   end
 
   test "How many blocks away is Easter Bunny HQ" do
-    assert File.read!("test/fixtures/input.txt")
+    assert File.read!("test/fixtures/input01.txt")
     |> String.trim
     |> blocks == 243
   end
@@ -111,7 +110,7 @@ defmodule AdventOfCode01Test do
   end
 
   test "How many blocks away is the first location you visit twice?" do
-    assert File.read!("test/fixtures/input.txt")
+    assert File.read!("test/fixtures/input01.txt")
     |> String.trim
     |> twice
     |> distance == 142

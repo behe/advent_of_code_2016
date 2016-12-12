@@ -1,6 +1,5 @@
 defmodule AdventOfCode02Test do
   use ExUnit.Case
-  doctest AdventOfCode02
 
   test "You start at 5 and move up (to 2), left (to 1), and left (you can't, and stay on 1), so the first button is 1" do
     assert digit("5", "ULL") == "1"
@@ -54,7 +53,7 @@ defmodule AdventOfCode02Test do
   end
 
   test "What is the bathroom code?" do
-    assert File.read!("test/fixtures/input.txt")
+    assert File.read!("test/fixtures/input02.txt")
     |> String.trim
     |> code == "97289"
   end
@@ -96,7 +95,7 @@ defmodule AdventOfCode02Test do
   end
 
   test "Using the same instructions in your puzzle input, what is the correct bathroom code?" do
-    assert File.read!("test/fixtures/input.txt")
+    assert File.read!("test/fixtures/input02.txt")
     |> String.trim
     |> code(@fancy_moves) == "9A7DC"
   end
