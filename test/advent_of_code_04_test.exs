@@ -5,9 +5,12 @@ defmodule AdventOfCode04Test do
     assert real_room?("aaaaa-bbb-z-y-x-123[abxyz]") == true
   end
 
-  def real_room?(room) do
-    {name, _id, checksum} = extract_room_details(room)
+  def real_room?({name, _id, checksum}) do
     checksum(name) == checksum
+  end
+  def real_room?(room) do
+    extract_room_details(room)
+    |> real_room?
   end
 
   def extract_room_details(room) do
@@ -48,12 +51,60 @@ defmodule AdventOfCode04Test do
     |> String.split("\n")
     |> Enum.slice(0..-2)
     |> Enum.map(fn(room) -> extract_room_details(room) end)
-    |> Enum.filter(fn({name, _id, checksum}) -> checksum(name) == checksum end)
+    |> Enum.filter(&real_room?/1)
     |> Enum.reduce(0, fn({_, id, _}, sum) -> String.to_integer(id) + sum end)
   end
 
   test "What is the sum of the sector IDs of the real rooms?" do
     assert File.read!("test/fixtures/input04.txt")
     |> id_sum == 185371
+  end
+
+  test "the real name for qzmt-zixmtkozy-ivhz-343 is very encrypted name" do
+    assert real_name({"qzmt-zixmtkozy-ivhz", "343", "zimth"}) == {"very encrypted name", "343"}
+  end
+
+  def az, do: Stream.cycle(?a..?z)
+
+  def real_name({name, id, _checksum}) do
+    {real_name(to_charlist(name), String.to_integer(id)), id}
+  end
+
+  def real_name(decrypted_name, 0), do: decrypted_name |> to_string
+  def real_name(encrypted_name, count) do
+    real_name(decrypt(encrypted_name), count - 1)
+  end
+
+  def decrypt(_, _ \\ [])
+  def decrypt([], decrypted_name), do: decrypted_name |> List.flatten |> Enum.reverse
+  def decrypt([?- | encrypted_name], decrypted_name), do: decrypt(encrypted_name, [32, decrypted_name])
+  def decrypt([32 | encrypted_name], decrypted_name), do: decrypt(encrypted_name, [?-, decrypted_name])
+  def decrypt([encrypted_char | encrypted_name], decrypted_name) do
+    decrypted_char = az
+      |> Stream.drop(encrypted_char - ?a + 1)
+      |> Enum.take(1)
+    decrypt(encrypted_name, [decrypted_char | decrypted_name])
+  end
+
+  test "decrypt" do
+    assert decrypt(to_charlist("a- z")) == to_charlist("b -a")
+  end
+
+  test "What is the sector ID of the room where North Pole objects are stored?" do
+    assert File.read!("test/fixtures/input04.txt")
+    |> function_name == 984
+  end
+
+  def function_name(input) do
+    input
+    |> String.split("\n")
+    |> Enum.slice(0..-2)
+    |> Enum.map(fn(room) -> extract_room_details(room) end)
+    |> Enum.filter(&real_room?/1)
+    |> Enum.map(&real_name/1)
+    |> Enum.filter(fn({name, _id}) -> name =~ "northpole-object-storage" end)
+    |> List.first
+    |> elem(1)
+    |> String.to_integer
   end
 end
