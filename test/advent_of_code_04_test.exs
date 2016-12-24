@@ -64,8 +64,6 @@ defmodule AdventOfCode04Test do
     assert real_name({"qzmt-zixmtkozy-ivhz", "343", "zimth"}) == {"very encrypted name", "343"}
   end
 
-  def az, do: Stream.cycle(?a..?z)
-
   def real_name({name, id, _checksum}) do
     {real_name(to_charlist(name), String.to_integer(id)), id}
   end
@@ -80,7 +78,7 @@ defmodule AdventOfCode04Test do
   def decrypt([?- | encrypted_name], decrypted_name), do: decrypt(encrypted_name, [32, decrypted_name])
   def decrypt([32 | encrypted_name], decrypted_name), do: decrypt(encrypted_name, [?-, decrypted_name])
   def decrypt([encrypted_char | encrypted_name], decrypted_name) do
-    decrypted_char = az
+    decrypted_char = Stream.cycle(?a..?z)
       |> Stream.drop(encrypted_char - ?a + 1)
       |> Enum.take(1)
     decrypt(encrypted_name, [decrypted_char | decrypted_name])
