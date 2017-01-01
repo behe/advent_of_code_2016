@@ -1,8 +1,6 @@
 defmodule AdventOfCode09Test do
   use ExUnit.Case
 
-  @moduletag :wip
-
   test "ADVENT contains no markers and decompresses to itself with no changes, resulting in a decompressed length of 6" do
     assert decompress("ADVENT") == 6
   end
@@ -82,5 +80,53 @@ defmodule AdventOfCode09Test do
   test "What is the decompressed length of the file" do
     assert File.read!("test/fixtures/input09.txt")
     |> decompress == 107035
+  end
+
+  test "(3x3)XYZ still becomes XYZXYZXYZ, as the decompressed section contains no markers" do
+    assert decompress_v2("(3x3)XYZ") == 9
+  end
+
+  def decompress_v2(input) when is_binary(input) do
+    input
+    |> String.trim
+    |> String.split("\n")
+    |> Enum.reduce(0, fn(line, acc) ->
+      line
+      |> String.codepoints
+      |> decompress_v2
+      |> Kernel.+(acc)
+    end)
+  end
+
+  test "X(8x2)(3x3)ABCY becomes XABCABCABCABCABCABCY, because the decompressed data from the (8x2) marker is then further decompressed, thus triggering the (3x3) marker twice for a total of six ABC sequences" do
+    assert decompress_v2("X(8x2)(3x3)ABCY") == 20
+  end
+
+  def decompress_v2(compressed, decompressed_length \\ 0)
+  def decompress_v2([], decompressed_length), do: decompressed_length
+  def decompress_v2(["(" | compressed], decompressed_length) do
+    {length, compressed} = extract_length(compressed)
+    {times, compressed} = extract_times(compressed)
+    {decompressed_part, compressed} = Enum.split(compressed, length)
+    length = decompress_v2(decompressed_part)
+    size = length * times
+    decompressed_length = size + decompressed_length
+    decompress_v2(compressed, decompressed_length)
+  end
+  def decompress_v2([_ | compressed], decompressed_length) do
+    decompress_v2(compressed, decompressed_length + 1)
+  end
+
+  test "(27x12)(20x12)(13x14)(7x10)(1x12)A decompresses into a string of A repeated 241920 times" do
+    assert decompress_v2("(27x12)(20x12)(13x14)(7x10)(1x12)A") == 241920
+  end
+
+  test "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN becomes 445 characters long" do
+    assert decompress_v2("(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN") == 445
+  end
+
+  test "What is the decompressed length of the file using this improved format" do
+    assert File.read!("test/fixtures/input09.txt")
+    |> decompress_v2 == 11451628995
   end
 end
