@@ -44,19 +44,23 @@ defmodule AdventOfCode10Test do
       "bot_1" => [3],
       "bot_2" => [2, 5]
     }
-    assert give("bot 2 gives low to bot 1 and high to bot 0", {state, []}) == {:cont, {%{
+    assert give("bot 2 gives low to bot 1 and high to bot 0", {state, []}) == {%{
       "bot_0" => [5],
       "bot_1" => [2, 3],
-    }, []}}
+    }, []}
   end
 
   def give(instruction, {state, instructions}) do
     case Regex.named_captures(~r/bot (?<bot>\d+) gives low to (?<low_name>\w+) (?<low>\d+) and high to (?<high_name>\w+) (?<high>\d+)/, instruction) do
       %{"bot" => bot, "low_name" => low_name, "low" => low, "high_name" => high_name, "high" => high} ->
         case Map.get(state, "bot_#{bot}") do
-          [17, 61] -> {:halt, {bot, instructions}}
           [_, _] ->
             {values, state} = Map.pop(state, "bot_#{bot}")
+            state = if [17, 61] == values do
+              Map.put(state, "17_61", bot)
+            else
+              state
+            end
             state = state
               |> Map.update("#{low_name}_#{low}", [Enum.min(values)], fn(lows) ->
                 [Enum.min(values) | lows]
@@ -64,11 +68,9 @@ defmodule AdventOfCode10Test do
               |> Map.update("#{high_name}_#{high}", [Enum.max(values)], fn(highs) ->
                 [Enum.max(values) | highs]
               end)
-            {:cont, {state, instructions}}
-            _ -> {:cont, {state, instructions ++ [instruction]}}
+            {state, instructions}
+            _ -> {state, instructions ++ [instruction]}
         end
-      # otherwise -> IO.inspect(instruction); nil
-      # _ -> {state, instructions ++ [instruction]}
     end
   end
 
@@ -77,10 +79,10 @@ defmodule AdventOfCode10Test do
       "bot_0" => [5],
       "bot_1" => [2, 3],
     }
-    assert give("bot 1 gives low to output 1 and high to bot 0", {state, []}) == {:cont, {%{
+    assert give("bot 1 gives low to output 1 and high to bot 0", {state, []}) == {%{
       "bot_0" => [3, 5],
       "output_1" => [2],
-    }, []}}
+    }, []}
   end
 
   test "Finally, bot 0 has two microchips; it puts the 3 in output 2 and the 5 in output 0" do
@@ -88,35 +90,43 @@ defmodule AdventOfCode10Test do
       "bot_0" => [3, 5],
       "output_1" => [2],
     }
-    assert give("bot 0 gives low to output 2 and high to output 0", {state, []}) == {:cont, {%{
+    assert give("bot 0 gives low to output 2 and high to output 0", {state, []}) == {%{
       "output_0" => [5],
       "output_1" => [2],
       "output_2" => [3]
-    }, []}}
+    }, []}
   end
 
   test "what is the number of the bot that is responsible for comparing value-61 microchips with value-17 microchips" do
     state = %{
       "bot_0" => [17, 61],
     }
-    assert give("bot 0 gives low to output 2 and high to output 0", {state, []}) == {:halt, {"0", []}}
+    assert give("bot 0 gives low to output 2 and high to output 0", {state, []}) == {%{
+      "17_61" => "0",
+      "output_0" => [61],
+      "output_2" => [17],
+    }, []}
   end
 
   test "Based on your instructions, what is the number of the bot that is responsible for comparing value-61 microchips with value-17 microchips" do
     assert File.read!("test/fixtures/input10.txt")
     |> parse
-    |> give == "98"
+    |> give
+    |> Map.get("17_61") == "98"
   end
 
+  def give({state, []}), do: state
   def give({state, instructions}) do
-    # IO.inspect length(instructions)
-    # Enum.map(state, fn({key, value}) -> IO.inspect({key, Enum.map(value, &Integer.to_string/1)}) end)
-    {state, remaining} = instructions
-      |> Enum.reduce_while({state, []}, &give/2)
-    cond do
-      !is_map(state) -> state
-      length(instructions) == length(remaining) -> state
-      :otherwise -> give({state, remaining})
-    end
+    instructions
+    |> Enum.reduce({state, []}, &give/2)
+    |> give
+  end
+
+  test "What do you get if you multiply together the values of one chip in each of outputs 0, 1, and 2" do
+    assert File.read!("test/fixtures/input10.txt")
+    |> parse
+    |> give
+    |> Map.take(["output_0", "output_1", "output_2"])
+    |> Enum.reduce(1, fn({_, [value]}, acc) -> value * acc end) == 4042
   end
 end
